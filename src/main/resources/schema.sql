@@ -23,3 +23,14 @@ CREATE TABLE IF NOT EXISTS residents (
     name     VARCHAR(80) NOT NULL,
     UNIQUE (tower_id, flat)
 );
+-- `A parcel in a door. Its public id (P001) is made from `id`; the database id itself is never shown.`
+CREATE TABLE IF NOT EXISTS parcels (
+    id           BIGINT AUTO_INCREMENT PRIMARY KEY,
+    tower_id     BIGINT                   NOT NULL REFERENCES towers (id),
+    flat         VARCHAR(8)               NOT NULL,
+    size_class   VARCHAR(1)               NOT NULL,
+    door_id      BIGINT                   NOT NULL REFERENCES doors (id),
+    dropped_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+    collected_at TIMESTAMP WITH TIME ZONE,
+    state        VARCHAR(10)              NOT NULL
+);
