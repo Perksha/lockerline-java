@@ -1,4 +1,3 @@
-
 package com.lockerline.drop;
 
 import java.time.Clock;
@@ -62,7 +61,7 @@ public class DropService {
         Instant expires = now.plus(Duration.ofHours(settings.freeWindowHours()));
         String code = codes.newCode();
 
-        while (parcels.codeInUse(codes.hash(code))) { // no two parcels share a code
+        while (parcels.codeInUse(codes.hash(code))) { // two waiting parcels never share a code
             code = codes.newCode();
         }
 
