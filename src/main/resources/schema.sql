@@ -1,5 +1,6 @@
 
 -- The tower, its doors and its residents. Run at every start-up, so every table is created only if missing.
+
 -- A door's state is not stored: it is free when current_parcel_id is null and holding otherwise.
 
 CREATE TABLE IF NOT EXISTS towers (
@@ -9,7 +10,7 @@ CREATE TABLE IF NOT EXISTS towers (
 );
 
 CREATE TABLE IF NOT EXISTS doors (
-    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id                BIGINT     AUTO_INCREMENT PRIMARY KEY,
     tower_id          BIGINT     NOT NULL REFERENCES towers (id),
     no                VARCHAR(8) NOT NULL,
     size_class        VARCHAR(1) NOT NULL,
@@ -18,21 +19,22 @@ CREATE TABLE IF NOT EXISTS doors (
 );
 
 CREATE TABLE IF NOT EXISTS residents (
-    id       BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id       BIGINT      AUTO_INCREMENT PRIMARY KEY,
     tower_id BIGINT      NOT NULL REFERENCES towers (id),
     flat     VARCHAR(8)  NOT NULL,
     name     VARCHAR(80) NOT NULL,
     UNIQUE (tower_id, flat)
 );
 
--- A parcel in a door. Its public id (P001) is made from id; the database id itself is never shown.
--- The pickup code is stored only as a keyed hash, with the moment it expires.
--- A collected parcel keeps its dwell - how long it waited - stored, not recomputed on read.
+-- One row per transition (dropped, code_issued, opened), written in the same transaction as the change.
+-- Insert only: nothing in the app updates or deletes a row. `data` holds the event's facts as JSON text - ids and
+-- facts, never the code or a resident's name.
+
 CREATE TABLE IF NOT EXISTS parcels (
-    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id              BIGINT                   AUTO_INCREMENT PRIMARY KEY,
     tower_id        BIGINT                   NOT NULL REFERENCES towers (id),
-    flat            VARCHAR(8)               NOT NULL,
-    size_class      VARCHAR(1)               NOT NULL,
+    flat            VARCHAR(8)                NOT NULL,
+    size_class      VARCHAR(1)                NOT NULL,
     door_id         BIGINT                   NOT NULL REFERENCES doors (id),
     dropped_at      TIMESTAMP WITH TIME ZONE NOT NULL,
     collected_at    TIMESTAMP WITH TIME ZONE,
@@ -41,4 +43,13 @@ CREATE TABLE IF NOT EXISTS parcels (
     code_expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     code_used_at    TIMESTAMP WITH TIME ZONE,
     dwell_seconds   BIGINT
+);
+
+CREATE TABLE IF NOT EXISTS events (
+    id         BIGINT                           AUTO_INCREMENT PRIMARY KEY,
+    tower_id   BIGINT                           NOT NULL REFERENCES towers (id),
+    parcel_id  BIGINT                           NOT NULL REFERENCES parcels (id),
+    kind       VARCHAR(20)                      NOT NULL,
+    at         TIMESTAMP WITH TIME ZONE         NOT NULL,
+    data       VARCHAR(2000)                    NOT NULL
 );
